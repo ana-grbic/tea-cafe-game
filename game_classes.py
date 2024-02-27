@@ -30,15 +30,16 @@ class InventoryScreen:
 
     def draw(self):
         if self.visible:
-            pygame.draw.rect(self.screen, (245, 190, 170), (50, 50, 200, 300))
+            pygame.draw.rect(self.screen, (190, 130, 85), (50, 50, 200, 300))
 
-            # draw inventory items
             font = pygame.font.Font(None, 24)
-            for i, (item, count) in enumerate(self.inventory_items.items()):
+            y_pos = 70
+            for item, count in self.inventory_items.items():
                 if count > 0:
                     text = f"{item} x{count}"
-                    text_surface = font.render(text, True, (210, 88, 55))
-                    self.screen.blit(text_surface, (60, 70 + i * 30))
+                    text_surface = font.render(text, True, (0, 0, 0))
+                    self.screen.blit(text_surface, (60, y_pos))
+                    y_pos += 30
 
 class Wall:
     def __init__(self, x, y, width, height):
@@ -63,6 +64,7 @@ class CounterInteractionScreen:
         self.screen = screen
         self.visible = False
         self.inventory = inventory
+        self.item_rects = {}
 
     def toggle_visibility(self):
         self.visible = not self.visible
@@ -75,16 +77,27 @@ class CounterInteractionScreen:
 
     def draw(self):
         if self.visible:
-            pygame.draw.rect(self.screen, (200, 200, 200), (100, 100, 200, 300))
+            pygame.draw.rect(self.screen, (190, 130, 85), (300, 200, 600, 300))
             
             font = pygame.font.Font(None, 24)
-            y_pos = 120
+            x_pos = 320
+            y_pos = 220
             for item, count in self.inventory.items():
                 if count > 0:
                     text = f"{item} x{count}"
                     text_surface = font.render(text, True, (0, 0, 0))
-                    self.screen.blit(text_surface, (110, y_pos))
+                    item_rect = text_surface.get_rect(topleft=(x_pos, y_pos))
+                    self.item_rects[item] = item_rect
+                    self.screen.blit(text_surface, (x_pos, y_pos))
                     y_pos += 30
+
+    def handle_click(self, mouse_pos):
+        for item, rect in self.item_rects.items():
+            if rect.collidepoint(mouse_pos):
+                if item == "Leaf":
+                    if self.inventory.get("Leaf", 0) > 0:
+                        self.inventory["Leaf"] -= 1
+                        self.inventory["Tea"] = self.inventory.get("Tea", 0) + 1
 
 class Counter:
     def __init__(self, x, y, width, height):

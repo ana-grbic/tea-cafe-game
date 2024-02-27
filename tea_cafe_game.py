@@ -1,4 +1,5 @@
-from game_classes import Character, InventoryScreen, Wall, Plant, CounterInteractionScreen, Counter
+from game_classes import *
+from game_functions import *
 import sys
 import pygame
 import math
@@ -25,7 +26,7 @@ class MainWindow:
         self.camera_offset_x, self.camera_offset_y = 0, 0
 
         # initialise inventory
-        shared_inventory = {"Leaf": 0}
+        shared_inventory = {"Leaf": 0, "Tea": 0}
         self.inventory_screen = InventoryScreen(self.screen, shared_inventory)
 
         # initialise counter screen
@@ -46,9 +47,7 @@ class MainWindow:
             Wall(1080, 100, 20, 400), # right
         ]
         
-        self.plants = [
-            Plant(200, 200, 20, 20),
-        ]
+        self.plants = Plant(200, 200, 20, 20)
 
         self.counter = Counter(140, 650, 200, 40)
 
@@ -67,29 +66,26 @@ class MainWindow:
 
                 elif event.type == pygame.MOUSEBUTTONDOWN:
                     mouse_x, mouse_y = pygame.mouse.get_pos()
+
                     if event.button == 1:  # left mouse button
+                        if distance_to_object(self.character, self.plants) <= 50 and self.plants.rect.collidepoint(mouse_x - self.camera_offset_x, mouse_y - self.camera_offset_y) and not self.counter_screen.visible:
+                            self.show_text = True
+                            self.text_start_time = time.time()
+                            self.inventory_screen.add_item("Leaf")
+                        elif self.counter_screen.visible:
+                            self.counter_screen.handle_click(pygame.mouse.get_pos())
 
-                        # distance between character and plants
-                        for plant in self.plants:
-                            plant_center_x = plant.rect.x + plant.rect.width / 2
-                            plant_center_y = plant.rect.y + plant.rect.height / 2
-                            distance = math.sqrt((self.character.rect.centerx - plant_center_x)**2 +
-                                                 (self.character.rect.centery - plant_center_y)**2)
 
-                            if distance <= 50 and plant.rect.collidepoint(mouse_x - self.camera_offset_x, mouse_y - self.camera_offset_y):
-                                self.show_text = True
-                                self.text_start_time = time.time()
-                                self.inventory_screen.add_item("Leaf")
-
-                    elif event.button == 3:  # right mouse button      
-                        if self.counter.rect.collidepoint(mouse_x - self.camera_offset_x, mouse_y + self.camera_offset_y) and not self.inventory_screen.visible:
+                    elif event.button == 3:  # right mouse button
+                        if distance_to_object(self.character, self.counter) <= 50 and self.counter.rect.collidepoint(mouse_x - self.camera_offset_x, mouse_y + self.camera_offset_y) and not self.inventory_screen.visible:
                             self.counter_screen.toggle_visibility()
                         elif self.counter_screen.visible:
                             self.counter_screen.toggle_visibility()
-                
-            keys = pygame.key.get_pressed()
-            dx = (keys[pygame.K_d] - keys[pygame.K_a]) * 4
-            dy = (keys[pygame.K_s] - keys[pygame.K_w]) * 4
+
+            if not self.counter_screen.visible:
+                keys = pygame.key.get_pressed()
+                dx = (keys[pygame.K_d] - keys[pygame.K_a]) * 4
+                dy = (keys[pygame.K_s] - keys[pygame.K_w]) * 4
 
             new_rect = self.character.rect.move(dx, dy)
 
@@ -99,10 +95,8 @@ class MainWindow:
                     collision = True
                     break
 
-            for plant in self.plants:
-                if new_rect.colliderect(plant.rect):
-                    collision = True
-                    break
+            if new_rect.colliderect(self.plants.rect):
+                collision = True
 
             if new_rect.colliderect(self.counter.rect):
                 collision = True
@@ -122,8 +116,7 @@ class MainWindow:
                 wall.draw(self.screen, self.camera_offset_x, self.camera_offset_y)
 
             # draw plants
-            for plant in self.plants:
-                plant.draw(self.screen, self.camera_offset_x, self.camera_offset_y)
+            self.plants.draw(self.screen, self.camera_offset_x, self.camera_offset_y)
 
             # draw counter            
             self.counter.draw(self.screen, self.camera_offset_x, self.camera_offset_y)
