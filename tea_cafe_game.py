@@ -46,6 +46,17 @@ class MainWindow:
             Wall(100, 100, 20, 400), # left
             Wall(1080, 100, 20, 400), # right
         ]
+
+        self.chairs = [
+            Chair(810, 750, 40, 40), # top
+            Chair(750, 810, 40, 40), # left
+            Chair(870, 810, 40, 40), # right
+            Chair(810, 870, 40, 40), # bottom
+        ]
+
+        self.customer = Customer(425, 1350, 50, 50, self.chairs)
+
+        self.table = Table(800, 800, 60, 60)
         
         self.plants = Plant(200, 200, 20, 20)
 
@@ -95,10 +106,21 @@ class MainWindow:
                     collision = True
                     break
 
+            for chair in self.chairs:
+                if new_rect.colliderect(chair.rect):
+                    collision = True
+                    break
+
             if new_rect.colliderect(self.plants.rect):
                 collision = True
 
             if new_rect.colliderect(self.counter.rect):
+                collision = True
+
+            if new_rect.colliderect(self.table.rect):
+                collision = True
+
+            if new_rect.colliderect(self.customer.rect):
                 collision = True
 
             if not collision:
@@ -115,14 +137,28 @@ class MainWindow:
             for wall in self.walls:
                 wall.draw(self.screen, self.camera_offset_x, self.camera_offset_y)
 
+            # draw chairs
+            for chair in self.chairs:
+                chair.draw(self.screen, self.camera_offset_x, self.camera_offset_y)
+
             # draw plants
             self.plants.draw(self.screen, self.camera_offset_x, self.camera_offset_y)
 
             # draw counter            
             self.counter.draw(self.screen, self.camera_offset_x, self.camera_offset_y)
 
+            # draw table
+            self.table.draw(self.screen, self.camera_offset_x, self.camera_offset_y)
+
             # draw character
             self.character.draw(self.screen, self.camera_offset_x, self.camera_offset_y)
+
+            # draw customer
+            self.customer.update()
+            if self.customer.entered and self.customer.chair_chosen == None:
+                self.customer.chair_chosen = self.customer.find_available_chair()
+                print("Chair chosen: " + str(self.customer.chair_chosen))
+            self.customer.draw(self.screen, self.camera_offset_x, self.camera_offset_y)
 
             # draw inventory
             if not self.counter_screen.visible:

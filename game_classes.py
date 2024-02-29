@@ -2,6 +2,7 @@ import sys
 import pygame
 import math
 import time
+import random
 
 class Character:
     def __init__(self, x, y, width, height):
@@ -15,6 +16,39 @@ class Character:
     def move(self, dx, dy):
         self.rect.x += dx
         self.rect.y += dy
+
+class Customer:
+    def __init__(self, x, y, width, height, chairs):
+        self.rect = pygame.Rect(x, y, width, height)
+        self.spawn_point = (425, 1350)
+        self.destination = (425, 1000)
+        self.speed = 1
+        self.entered = False
+        self.sitting = False
+        self.chairs = chairs
+        self.chair_chosen = None
+        self.path = []
+
+    def update(self):
+        if self.rect.y > self.destination[1]:
+            self.rect.y -= self.speed
+        else:
+            self.entered = True
+
+    def find_available_chair(self):
+        available_chairs_indices = [i for i, chair in enumerate(self.chairs) if chair.available]
+        if available_chairs_indices:
+            return random.choice(available_chairs_indices)
+        else:
+            return None
+    
+    def find_path():
+        pass
+
+    def draw(self, screen, camera_x, camera_y):
+        adjusted_x = self.rect.x - camera_x
+        adjusted_y = self.rect.y - camera_y
+        pygame.draw.rect(screen, (230, 175, 160), (adjusted_x, adjusted_y, self.rect.width, self.rect.height))
 
 class InventoryScreen:
     def __init__(self, screen, inventory):
@@ -58,6 +92,25 @@ class Plant:
         adjusted_x = self.rect.x - camera_x
         adjusted_y = self.rect.y - camera_y
         pygame.draw.rect(screen, (63, 77, 52), (adjusted_x, adjusted_y, self.rect.width, self.rect.height))
+
+class Table:
+    def __init__(self, x, y, width, height):
+        self.rect = pygame.Rect(x, y, width, height)
+
+    def draw(self, screen, camera_x, camera_y):
+        adjusted_x = self.rect.x - camera_x
+        adjusted_y = self.rect.y - camera_y
+        pygame.draw.rect(screen, (105, 80, 65), (adjusted_x, adjusted_y, self.rect.width, self.rect.height))
+
+class Chair:
+    def __init__(self, x, y, width, height):
+        self.rect = pygame.Rect(x, y, width, height)
+        self.available = True
+
+    def draw(self, screen, camera_x, camera_y):
+        adjusted_x = self.rect.x - camera_x
+        adjusted_y = self.rect.y - camera_y
+        pygame.draw.rect(screen, (105, 80, 65), (adjusted_x, adjusted_y, self.rect.width, self.rect.height))
 
 class CounterInteractionScreen:
     def __init__(self, screen, inventory):
