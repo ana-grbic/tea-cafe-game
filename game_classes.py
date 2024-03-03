@@ -20,20 +20,29 @@ class Character:
 class Customer:
     def __init__(self, x, y, width, height, chairs):
         self.rect = pygame.Rect(x, y, width, height)
-        self.spawn_point = (425, 1350)
-        self.destination = (425, 1000)
-        self.speed = 1
-        self.entered = False
+        self.spawn_point = (420, 1350)
+        self.destination = (420, 1000)
         self.sitting = False
         self.chairs = chairs
         self.chair_chosen = None
         self.path = []
 
-    def update(self):
-        if self.rect.y > self.destination[1]:
-            self.rect.y -= self.speed
-        else:
-            self.entered = True
+    def update(self, path, counter):
+        if path:
+            if counter == 0:
+                next_node = path.pop(0)
+            else:
+                next_node = path[0]
+            next_x, next_y = next_node
+            if next_x * 10 > self.rect.x:
+                self.rect.x = next_x * 10 - counter
+            elif next_x * 10 < self.rect.x:
+                self.rect.x = next_x * 10 + counter
+            elif next_y * 10 > self.rect.y:
+                self.rect.y = next_y * 10 - counter
+            elif next_y * 10 < self.rect.y:
+                self.rect.y = next_y * 10 + counter
+            
 
     def find_available_chair(self):
         available_chairs_indices = [i for i, chair in enumerate(self.chairs) if chair.available]
@@ -41,9 +50,6 @@ class Customer:
             return random.choice(available_chairs_indices)
         else:
             return None
-    
-    def find_path():
-        pass
 
     def draw(self, screen, camera_x, camera_y):
         adjusted_x = self.rect.x - camera_x
@@ -104,6 +110,8 @@ class Table:
 
 class Chair:
     def __init__(self, x, y, width, height):
+        self.x = x
+        self.y = y
         self.rect = pygame.Rect(x, y, width, height)
         self.available = True
 

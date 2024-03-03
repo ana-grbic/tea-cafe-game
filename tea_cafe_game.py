@@ -131,7 +131,7 @@ class MainWindow:
             self.camera_offset_x = max(min(self.character.rect.x - window_width // 2, self.map_width - window_width), 0)
             self.camera_offset_y = max(min(self.character.rect.y - window_height // 2, self.map_height - window_height), 0)
 
-            self.screen.fill((198, 192, 156))  # screen colour
+            self.screen.fill((198, 192, 156))
 
             # draw walls
             for wall in self.walls:
@@ -154,11 +154,20 @@ class MainWindow:
             self.character.draw(self.screen, self.camera_offset_x, self.camera_offset_y)
 
             # draw customer
-            self.customer.update()
-            if self.customer.entered and self.customer.chair_chosen == None:
-                self.customer.chair_chosen = self.customer.find_available_chair()
-                print("Chair chosen: " + str(self.customer.chair_chosen))
             self.customer.draw(self.screen, self.camera_offset_x, self.camera_offset_y)
+            if self.customer.chair_chosen == None:
+                self.customer.chair_chosen = self.customer.find_available_chair()
+                chair_x, chair_y = self.chairs[self.customer.chair_chosen].rect.x / 10, self.chairs[self.customer.chair_chosen].rect.y / 10
+                start = (420 / 10, 1350 / 10)
+                end = (chair_x, chair_y)
+                self.obstacles = obstacle_list(self.walls, self.chairs, self.table, self.chairs[self.customer.chair_chosen])
+                self.customer.path = find_path(start, end, self.obstacles)
+                counter = 9
+            else:
+                counter = counter - 1
+                self.customer.update(self.customer.path, counter)
+                if counter == 0:
+                    counter = 9
 
             # draw inventory
             if not self.counter_screen.visible:
