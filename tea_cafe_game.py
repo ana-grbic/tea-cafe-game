@@ -4,6 +4,7 @@ import sys
 import pygame
 import math
 import time
+TILE_SIZE = 50
 
 class MainWindow:
     def __init__(self):
@@ -35,32 +36,32 @@ class MainWindow:
         self.walls = [
             # x, y, width, height
             # cafe walls
-            Wall(100, 500, 300, 40), # top left
-            Wall(500, 500, 600, 40), # top right
-            Wall(100, 500, 40, 600), # left
-            Wall(1060, 500, 40, 600), # right
-            Wall(100, 1060, 300, 40), # bottom left
-            Wall(500, 1060, 600, 40), # bottom right
+            Wall(2, 10, 6, 1), # top left
+            Wall(10, 10, 12, 1), # top right
+            Wall(2, 10, 1, 12), # left
+            Wall(21, 10, 1, 12), # right
+            Wall(2, 21, 6, 1), # bottom left
+            Wall(10, 21, 12, 1), # bottom right
             # garden walls
-            Wall(100, 100, 1000, 20), # top
-            Wall(100, 100, 20, 400), # left
-            Wall(1080, 100, 20, 400), # right
+            Wall(2, 2, 20, 1), # top
+            Wall(2, 2, 1, 8), # left
+            Wall(21, 2, 1, 8), # right
         ]
 
         self.chairs = [
-            Chair(810, 750, 40, 40), # top
-            Chair(750, 810, 40, 40), # left
-            Chair(870, 810, 40, 40), # right
-            Chair(810, 870, 40, 40), # bottom
+            Chair(16, 15), # top
+            Chair(15, 16), # left
+            Chair(17, 16), # right
+            Chair(16, 17), # bottom
         ]
 
-        self.customer = Customer(425, 1350, 50, 50, self.chairs)
+        self.customer = Customer(9, 27, self.chairs)
 
-        self.table = Table(800, 800, 60, 60)
+        self.table = Table(16, 16)
         
-        self.plants = Plant(200, 200, 20, 20)
+        self.plants = Plant(4, 4)
 
-        self.counter = Counter(140, 650, 200, 40)
+        self.counter = Counter(3, 13, 4, 1)
 
         self.character = Character(575, 800, 50, 50)
 
@@ -157,17 +158,15 @@ class MainWindow:
             self.customer.draw(self.screen, self.camera_offset_x, self.camera_offset_y)
             if self.customer.chair_chosen == None:
                 self.customer.chair_chosen = self.customer.find_available_chair()
-                chair_x, chair_y = self.chairs[self.customer.chair_chosen].rect.x / 10, self.chairs[self.customer.chair_chosen].rect.y / 10
-                start = (420 / 10, 1350 / 10)
-                end = (chair_x, chair_y)
+                chair_x, chair_y = self.chairs[self.customer.chair_chosen].x, self.chairs[self.customer.chair_chosen].y
                 self.obstacles = obstacle_list(self.walls, self.chairs, self.table, self.chairs[self.customer.chair_chosen])
-                self.customer.path = find_path(start, end, self.obstacles)
-                counter = 9
+                self.customer.path = find_path(self.customer.spawn_point, (chair_x, chair_y), self.obstacles)
+                counter = 49
             else:
                 counter = counter - 1
                 self.customer.update(self.customer.path, counter)
                 if counter == 0:
-                    counter = 9
+                    counter = 49
 
             # draw inventory
             if not self.counter_screen.visible:

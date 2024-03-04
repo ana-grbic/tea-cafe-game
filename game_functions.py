@@ -2,8 +2,9 @@ import sys
 import pygame
 import math
 import time
-GRID_WIDTH = 120
-GRID_HEIGHT = 140
+GRID_WIDTH = 24
+GRID_HEIGHT = 28
+TILE_SIZE = 50
 
 def distance_to_object(character, obj):
     char_x, char_y = character.rect.center
@@ -17,25 +18,11 @@ def get_neighbors(current, obstacles):
     possible_neighbors = [(x+1, y), (x-1, y), (x, y+1), (x, y-1)]
     for neighbor in possible_neighbors:
         if neighbor[0] >= 0 and neighbor[0] < GRID_WIDTH and neighbor[1] >= 0 and neighbor[1] < GRID_HEIGHT:
-            extended_neighbor = get_extended_neighbors(neighbor)
-            if not any(n in obstacles for n in extended_neighbor):
+            if neighbor not in obstacles:
                 neighbors.append(neighbor)
     return neighbors
 
-def get_extended_neighbors(current):
-    x, y = current
-    extended_neighbors = set()
-
-    extended_neighbors.add(current)
-
-    for i in range(int(x), int(x) + 5): # adjust number depending on how close you want the neighbor to obstacles
-        for j in range(int(y), int(y) + 5):
-            extended_neighbors.add((i, j))
-
-    return extended_neighbors
-
 def find_path(start, end, obstacles):
-    print("path")
     grid = {(x, y) for x in range(GRID_WIDTH) for y in range(GRID_HEIGHT)}
     open_list = [start]
     closed_list = []
@@ -74,21 +61,13 @@ def find_path(start, end, obstacles):
 def obstacle_list(walls, chairs, table, destination_chair):
     obstacles = set()
 
-    def convert_to_grid_points(x, y, width, height):
-        grid_points = set()
-        for i in range(x // 10, (x + width) // 10 + 1):
-            for j in range(y // 10, (y + height) // 10 + 1):
-                grid_points.add((i, j))
-        return grid_points
-
-    obstacles.update(convert_to_grid_points(walls[4].rect.x, walls[4].rect.y, walls[4].rect.width, walls[4].rect.height))
-    obstacles.update(convert_to_grid_points(walls[5].rect.x, walls[5].rect.y, walls[5].rect.width, walls[5].rect.height))
+    obstacles.update(walls[4].get_points())
+    obstacles.update(walls[5].get_points())
 
     for chair in chairs:
         if chair != destination_chair:
-            obstacles.update(convert_to_grid_points(chair.rect.x, chair.rect.y, chair.rect.width, chair.rect.height))
+            obstacles.add((chair.x, chair.y))
 
-    obstacles.update(convert_to_grid_points(table.rect.x, table.rect.y, table.rect.width, table.rect.height))
+    obstacles.add((table.x, table.y))
 
-    #print(obstacles)
     return obstacles

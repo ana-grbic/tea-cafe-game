@@ -3,6 +3,7 @@ import pygame
 import math
 import time
 import random
+TILE_SIZE = 50
 
 class Character:
     def __init__(self, x, y, width, height):
@@ -18,10 +19,11 @@ class Character:
         self.rect.y += dy
 
 class Customer:
-    def __init__(self, x, y, width, height, chairs):
-        self.rect = pygame.Rect(x, y, width, height)
-        self.spawn_point = (420, 1350)
-        self.destination = (420, 1000)
+    def __init__(self, x, y, chairs):
+        self.rect = pygame.Rect(x * TILE_SIZE, y * TILE_SIZE, TILE_SIZE, TILE_SIZE)
+        self.x = x
+        self.y = y
+        self.spawn_point = (9, 27)
         self.sitting = False
         self.chairs = chairs
         self.chair_chosen = None
@@ -34,14 +36,14 @@ class Customer:
             else:
                 next_node = path[0]
             next_x, next_y = next_node
-            if next_x * 10 > self.rect.x:
-                self.rect.x = next_x * 10 - counter
-            elif next_x * 10 < self.rect.x:
-                self.rect.x = next_x * 10 + counter
-            elif next_y * 10 > self.rect.y:
-                self.rect.y = next_y * 10 - counter
-            elif next_y * 10 < self.rect.y:
-                self.rect.y = next_y * 10 + counter
+            if next_x * 50 > self.rect.x:
+                self.rect.x = next_x * 50 - counter
+            elif next_x * 50 < self.rect.x:
+                self.rect.x = next_x * 50 + counter
+            elif next_y * 50 > self.rect.y:
+                self.rect.y = next_y * 50 - counter
+            elif next_y * 50 < self.rect.y:
+                self.rect.y = next_y * 50 + counter
             
 
     def find_available_chair(self):
@@ -54,7 +56,7 @@ class Customer:
     def draw(self, screen, camera_x, camera_y):
         adjusted_x = self.rect.x - camera_x
         adjusted_y = self.rect.y - camera_y
-        pygame.draw.rect(screen, (230, 175, 160), (adjusted_x, adjusted_y, self.rect.width, self.rect.height))
+        pygame.draw.rect(screen, (230, 175, 160), (adjusted_x, adjusted_y, TILE_SIZE, TILE_SIZE))
 
 class InventoryScreen:
     def __init__(self, screen, inventory):
@@ -83,42 +85,59 @@ class InventoryScreen:
 
 class Wall:
     def __init__(self, x, y, width, height):
-        self.rect = pygame.Rect(x, y, width, height)
-
-    def draw(self, screen, camera_x, camera_y):
-        adjusted_x = self.rect.x - camera_x
-        adjusted_y = self.rect.y - camera_y
-        pygame.draw.rect(screen, (205, 105, 65), (adjusted_x, adjusted_y, self.rect.width, self.rect.height))
-
-class Plant:
-    def __init__(self, x, y, width, height):
-        self.rect = pygame.Rect(x, y, width, height)
-
-    def draw(self, screen, camera_x, camera_y):
-        adjusted_x = self.rect.x - camera_x
-        adjusted_y = self.rect.y - camera_y
-        pygame.draw.rect(screen, (63, 77, 52), (adjusted_x, adjusted_y, self.rect.width, self.rect.height))
-
-class Table:
-    def __init__(self, x, y, width, height):
-        self.rect = pygame.Rect(x, y, width, height)
-
-    def draw(self, screen, camera_x, camera_y):
-        adjusted_x = self.rect.x - camera_x
-        adjusted_y = self.rect.y - camera_y
-        pygame.draw.rect(screen, (105, 80, 65), (adjusted_x, adjusted_y, self.rect.width, self.rect.height))
-
-class Chair:
-    def __init__(self, x, y, width, height):
+        self.rect = pygame.Rect(x * TILE_SIZE, y * TILE_SIZE, width * TILE_SIZE, height * TILE_SIZE)
         self.x = x
         self.y = y
-        self.rect = pygame.Rect(x, y, width, height)
+        self.width = width
+        self.height = height
+
+    def draw(self, screen, camera_x, camera_y):
+        adjusted_x = self.x * TILE_SIZE - camera_x
+        adjusted_y = self.y * TILE_SIZE - camera_y
+        pygame.draw.rect(screen, (205, 105, 65), (adjusted_x, adjusted_y, self.width * TILE_SIZE, self.height * TILE_SIZE))
+
+    def get_points(self):
+        points = set()
+
+        for i in range(self.x, self.x + self.width):
+            for j in range(self.y, self.y + self.height):
+                points.add((i, j))
+
+        return points
+
+class Plant:
+    def __init__(self, x, y):
+        self.rect = pygame.Rect(x * TILE_SIZE + TILE_SIZE/4, y * TILE_SIZE + TILE_SIZE/4, TILE_SIZE/2, TILE_SIZE/2)
+        self.x = x
+        self.y = y
+
+    def draw(self, screen, camera_x, camera_y):
+        adjusted_x = self.x * TILE_SIZE + TILE_SIZE/4 - camera_x
+        adjusted_y = self.y * TILE_SIZE + TILE_SIZE/4 - camera_y
+        pygame.draw.rect(screen, (63, 77, 52), (adjusted_x, adjusted_y, TILE_SIZE/2, TILE_SIZE/2))
+
+class Table:
+    def __init__(self, x, y):
+        self.rect = pygame.Rect(x * TILE_SIZE, y * TILE_SIZE, TILE_SIZE, TILE_SIZE)
+        self.x = x
+        self.y = y
+
+    def draw(self, screen, camera_x, camera_y):
+        adjusted_x = self.x * TILE_SIZE - TILE_SIZE/5 - camera_x
+        adjusted_y = self.y * TILE_SIZE - TILE_SIZE/5 - camera_y
+        pygame.draw.rect(screen, (105, 80, 65), (adjusted_x, adjusted_y, TILE_SIZE * 7/5, TILE_SIZE * 7/5))
+
+class Chair:
+    def __init__(self, x, y):
+        self.rect = pygame.Rect(x * TILE_SIZE + TILE_SIZE/10, y * TILE_SIZE + TILE_SIZE/10, TILE_SIZE * 4/5, TILE_SIZE * 4/5)
+        self.x = x
+        self.y = y
         self.available = True
 
     def draw(self, screen, camera_x, camera_y):
-        adjusted_x = self.rect.x - camera_x
-        adjusted_y = self.rect.y - camera_y
-        pygame.draw.rect(screen, (105, 80, 65), (adjusted_x, adjusted_y, self.rect.width, self.rect.height))
+        adjusted_x = self.x * TILE_SIZE + TILE_SIZE/10 - camera_x
+        adjusted_y = self.y * TILE_SIZE + TILE_SIZE/10 - camera_y
+        pygame.draw.rect(screen, (105, 90, 65), (adjusted_x, adjusted_y, TILE_SIZE * 4/5, TILE_SIZE * 4/5))
 
 class CounterInteractionScreen:
     def __init__(self, screen, inventory):
@@ -162,9 +181,13 @@ class CounterInteractionScreen:
 
 class Counter:
     def __init__(self, x, y, width, height):
-        self.rect = pygame.Rect(x, y, width, height)
+        self.rect = pygame.Rect(x * TILE_SIZE, y * TILE_SIZE, width * TILE_SIZE, height * TILE_SIZE)
+        self.x = x
+        self.y = y
+        self.width = width
+        self.height = height
 
     def draw(self, screen, camera_x, camera_y):
-        adjusted_x = self.rect.x - camera_x
-        adjusted_y = self.rect.y - camera_y
-        pygame.draw.rect(screen, (210, 88, 55), (adjusted_x, adjusted_y, self.rect.width, self.rect.height))
+        adjusted_x = self.x * TILE_SIZE - camera_x
+        adjusted_y = self.y * TILE_SIZE - camera_y
+        pygame.draw.rect(screen, (210, 88, 55), (adjusted_x, adjusted_y, self.width * TILE_SIZE, self.height * TILE_SIZE))
