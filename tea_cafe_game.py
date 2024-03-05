@@ -55,7 +55,7 @@ class MainWindow:
             Chair(16, 17), # bottom
         ]
 
-        self.customer = Customer(9, 27, self.chairs)
+        self.customer = Customer(9, 27, self.chairs, self.screen)
 
         self.table = Table(16, 16)
         
@@ -80,7 +80,7 @@ class MainWindow:
                     mouse_x, mouse_y = pygame.mouse.get_pos()
 
                     if event.button == 1:  # left mouse button
-                        if distance_to_object(self.character, self.plants) <= 50 and self.plants.rect.collidepoint(mouse_x - self.camera_offset_x, mouse_y - self.camera_offset_y) and not self.counter_screen.visible:
+                        if distance_to_object(self.character, self.plants) <= 50 and self.plants.rect.collidepoint(mouse_x - self.camera_offset_x, mouse_y - self.camera_offset_y):
                             self.show_text = True
                             self.text_start_time = time.time()
                             self.inventory_screen.add_item("Leaf")
@@ -89,12 +89,16 @@ class MainWindow:
 
 
                     elif event.button == 3:  # right mouse button
-                        if distance_to_object(self.character, self.counter) <= 50 and self.counter.rect.collidepoint(mouse_x - self.camera_offset_x, mouse_y + self.camera_offset_y) and not self.inventory_screen.visible:
+                        if self.counter_screen.visible:
                             self.counter_screen.toggle_visibility()
-                        elif self.counter_screen.visible:
+                        elif self.customer.text_box_open:
+                            self.customer.text_box_open = False
+                        elif distance_to_object(self.character, self.counter) <= 50 and self.counter.rect.collidepoint(mouse_x - self.camera_offset_x, mouse_y + self.camera_offset_y) and not self.inventory_screen.visible:
                             self.counter_screen.toggle_visibility()
+                        elif distance_to_object(self.character, self.customer) <= 50 and self.customer.rect.collidepoint(mouse_x - self.camera_offset_x, mouse_y + self.camera_offset_y):
+                            self.customer.text_box_open = True
 
-            if not self.counter_screen.visible:
+            if not self.counter_screen.visible and not self.customer.text_box_open:
                 keys = pygame.key.get_pressed()
                 dx = (keys[pygame.K_d] - keys[pygame.K_a]) * 4
                 dy = (keys[pygame.K_s] - keys[pygame.K_w]) * 4

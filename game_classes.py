@@ -3,6 +3,7 @@ import pygame
 import math
 import time
 import random
+import json
 TILE_SIZE = 50
 
 class Character:
@@ -19,15 +20,20 @@ class Character:
         self.rect.y += dy
 
 class Customer:
-    def __init__(self, x, y, chairs):
+    def __init__(self, x, y, chairs, screen):
         self.rect = pygame.Rect(x * TILE_SIZE, y * TILE_SIZE, TILE_SIZE, TILE_SIZE)
         self.x = x
         self.y = y
+        self.screen = screen
         self.spawn_point = (9, 27)
         self.sitting = False
         self.chairs = chairs
         self.chair_chosen = None
+        self.text_box_open = False
         self.path = []
+        with open('game_text.json') as f:
+            self.texts = json.load(f)
+        self.current_text = None
 
     def update(self, path, counter):
         if path:
@@ -44,6 +50,8 @@ class Customer:
                 self.rect.y = next_y * 50 - counter
             elif next_y * 50 < self.rect.y:
                 self.rect.y = next_y * 50 + counter
+        else:
+            self.sitting = True
             
 
     def find_available_chair(self):
@@ -58,6 +66,19 @@ class Customer:
         adjusted_y = self.rect.y - camera_y
         pygame.draw.rect(screen, (230, 175, 160), (adjusted_x, adjusted_y, TILE_SIZE, TILE_SIZE))
 
+        if self.text_box_open and self.sitting:
+            pygame.draw.rect(self.screen, (190, 130, 85), (200, 500, 600, 150))
+            pygame.draw.rect(self.screen, (230, 175, 160), (800, 400, 200, 250))
+
+            if self.current_text == None:
+                category = random.choice(list(self.texts.keys()))
+                self.current_text = random.choice(self.texts[category])
+            
+            font = pygame.font.Font(None, 24)
+            text_surface = font.render(self.current_text, True, (0, 0, 0))
+            text_rect = text_surface.get_rect(center=(500, 575))
+            screen.blit(text_surface, text_rect)
+        
 class InventoryScreen:
     def __init__(self, screen, inventory):
         self.screen = screen
