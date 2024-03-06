@@ -33,6 +33,9 @@ class MainWindow:
         # initialise counter screen
         self.counter_screen = CounterInteractionScreen(self.screen, shared_inventory)
 
+        # initialise coins
+        self.coin = Coin(self.screen)
+
         self.walls = [
             # x, y, width, height
             # cafe walls
@@ -86,7 +89,8 @@ class MainWindow:
                             self.inventory_screen.add_item("Leaf")
                         elif self.counter_screen.visible:
                             self.counter_screen.handle_click(pygame.mouse.get_pos())
-
+                        elif self.inventory_screen.visible:
+                            self.inventory_screen.hold_item(pygame.mouse.get_pos())
 
                     elif event.button == 3:  # right mouse button
                         if self.counter_screen.visible:
@@ -95,7 +99,11 @@ class MainWindow:
                             self.customer.text_box_open = False
                         elif distance_to_object(self.character, self.counter) <= 50 and self.counter.rect.collidepoint(mouse_x - self.camera_offset_x, mouse_y + self.camera_offset_y) and not self.inventory_screen.visible:
                             self.counter_screen.toggle_visibility()
-                        elif distance_to_object(self.character, self.customer) <= 50 and self.customer.rect.collidepoint(mouse_x - self.camera_offset_x, mouse_y + self.camera_offset_y):
+                        elif distance_to_object(self.character, self.customer) <= 50 and self.customer.rect.collidepoint(mouse_x - self.camera_offset_x, mouse_y + self.camera_offset_y) and self.customer.wants_to_receive:
+                            if self.inventory_screen.item_held is not None and self.customer.wants_to_receive:
+                                self.customer.receive_item(self.inventory_screen.item_held, self.coin)
+                                self.inventory_screen.item_held = None
+                                self.customer.text_box_open = True
                             self.customer.text_box_open = True
 
             if not self.counter_screen.visible and not self.customer.text_box_open:
@@ -179,6 +187,9 @@ class MainWindow:
             # draw counter screen
             if not self.inventory_screen.visible:
                 self.counter_screen.draw()
+
+            # draw coin
+            self.coin.draw()
 
             if self.show_text:
                 text_surface = self.font.render("Leaf in inventory!", True, (63, 77, 52))

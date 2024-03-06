@@ -34,6 +34,8 @@ class Customer:
         with open('game_text.json') as f:
             self.texts = json.load(f)
         self.current_text = None
+        self.wants_to_receive = True
+        self.item_wanted = "Tea"
 
     def update(self, path, counter):
         if path:
@@ -52,7 +54,14 @@ class Customer:
                 self.rect.y = next_y * 50 + counter
         else:
             self.sitting = True
-            
+
+    def receive_item(self, item, coins):
+        if item == self.item_wanted:
+            self.current_text = random.choice(self.texts.get("correct", []))
+            coins.amount = coins.amount + 3
+        else:
+            self.current_text = random.choice(self.texts.get("incorrect", []))
+        self.wants_to_receive = False
 
     def find_available_chair(self):
         available_chairs_indices = [i for i, chair in enumerate(self.chairs) if chair.available]
@@ -71,8 +80,7 @@ class Customer:
             pygame.draw.rect(self.screen, (230, 175, 160), (800, 400, 200, 250))
 
             if self.current_text == None:
-                category = random.choice(list(self.texts.keys()))
-                self.current_text = random.choice(self.texts[category])
+                self.current_text = random.choice(self.texts.get("general tea requests", []))
             
             font = pygame.font.Font(None, 24)
             text_surface = font.render(self.current_text, True, (0, 0, 0))
@@ -84,6 +92,8 @@ class InventoryScreen:
         self.screen = screen
         self.visible = False
         self.inventory_items = inventory
+        self.item_rects = {}
+        self.item_held = None
 
     def toggle_visibility(self):
         self.visible = not self.visible
@@ -93,16 +103,36 @@ class InventoryScreen:
 
     def draw(self):
         if self.visible:
-            pygame.draw.rect(self.screen, (190, 130, 85), (50, 50, 200, 300))
+            self.inventory_screen_rect = pygame.draw.rect(self.screen, (190, 130, 85), (50, 50, 200, 300))
 
             font = pygame.font.Font(None, 24)
+            x_pos = 60
             y_pos = 70
             for item, count in self.inventory_items.items():
                 if count > 0:
                     text = f"{item} x{count}"
                     text_surface = font.render(text, True, (0, 0, 0))
-                    self.screen.blit(text_surface, (60, y_pos))
+                    item_rect = text_surface.get_rect(topleft=(x_pos, y_pos))
+                    self.item_rects[item] = item_rect
+                    self.screen.blit(text_surface, (x_pos, y_pos))
                     y_pos += 30
+
+        if self.item_held:
+            mouse_pos = pygame.mouse.get_pos()
+            item_rect = pygame.Rect(mouse_pos[0], mouse_pos[1], 20, 20)
+            pygame.draw.rect(self.screen, (220, 105, 85), item_rect)
+
+    def hold_item(self, mouse_pos):
+        if self.item_held is not None and self.inventory_screen_rect.collidepoint(mouse_pos):
+            self.inventory_items[self.item_held] += 1
+            self.item_held = None
+            return
+
+        for item, rect in self.item_rects.items():
+            if rect.collidepoint(mouse_pos):
+                if self.inventory_items[item] > 0 and self.item_held == None:
+                    self.inventory_items[item] -= 1
+                    self.item_held = item
 
 class Wall:
     def __init__(self, x, y, width, height):
@@ -212,3 +242,15 @@ class Counter:
         adjusted_x = self.x * TILE_SIZE - camera_x
         adjusted_y = self.y * TILE_SIZE - camera_y
         pygame.draw.rect(screen, (210, 88, 55), (adjusted_x, adjusted_y, self.width * TILE_SIZE, self.height * TILE_SIZE))
+
+class Coin:
+    def __init__(self, screen):
+        self.screen = screen
+        self.amount = 0
+
+    def draw(self):
+        self.inventory_screen_rect = pygame.draw.rect(self.screen, (250, 190, 75), (1125, 25, 40, 40))
+
+        font = pygame.font.Font(None, 50)
+        text_surface = font.render(str(self.amount), True, (0, 0, 0))
+        self.screen.blit(text_surface, (1090, 30))

@@ -3,5 +3,17 @@
         "I've traveled a long way to try some of your famous tea!",
         "I could use a cup of tea right now.",
         "I would like to order a cup of tea, please."
+    ],
+
+    "correct": [
+        "Just what I needed...",
+        "Thank you! It looks delicious!",
+        "This smells just wonderful!"
+    ],
+
+    "incorrect": [
+        "Are you trying to poison me?!",
+        "I certainly won't be coming back here.",
+        "How hard is it to just make what I asked for..."
     ]
 }
