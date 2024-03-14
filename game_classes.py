@@ -28,32 +28,37 @@ class Customer:
         self.spawn_point = (9, 27)
         self.colour = None
         self.chair_chosen = None
-        self.sitting = False
         self.text_box_open = False
         self.path = []
         self.counter = 49
-        self.leave_timer = random.randint(1200, 3600)
+        self.leave_timer = random.randint(3600, 7200)
+        self.sitting = False
         self.left = False
         with open('game_text.json') as f:
             self.texts = json.load(f)
         self.current_text = None
         self.wants_to_receive = False
+        self.received = False
         self.item_wanted = "Tea"
 
-    def update(self, path):
-        if self.counter == 0:
-            next_node = path.pop(0)
-        else:
-            next_node = path[0]
-        next_x, next_y = next_node
-        if next_x * 50 > self.rect.x:
-            self.rect.x = next_x * 50 - self.counter
-        elif next_x * 50 < self.rect.x:
-            self.rect.x = next_x * 50 + self.counter
-        elif next_y * 50 > self.rect.y:
-            self.rect.y = next_y * 50 - self.counter
-        elif next_y * 50 < self.rect.y:
-            self.rect.y = next_y * 50 + self.counter
+    def update(self):
+        if self.path:
+            if self.counter == 0:
+                next_node = self.path.pop(0)
+            else:
+                next_node = self.path[0]
+            next_x, next_y = next_node
+            if next_x * 50 > self.rect.x:
+                self.rect.x = next_x * 50 - self.counter
+            elif next_x * 50 < self.rect.x:
+                self.rect.x = next_x * 50 + self.counter
+            elif next_y * 50 > self.rect.y:
+                self.rect.y = next_y * 50 - self.counter
+            elif next_y * 50 < self.rect.y:
+                self.rect.y = next_y * 50 + self.counter
+            if self.counter == 0:
+                self.counter = 49
+            self.counter -= 1
 
     def receive_item(self, item, coins):
         if item == self.item_wanted:
@@ -61,8 +66,9 @@ class Customer:
             coins.amount = coins.amount + 3
         else:
             self.current_text = random.choice(self.texts.get("incorrect", []))
+            self.leave_timer = 0
+        self.received = True
         self.wants_to_receive = False
-        print("doesnt wanna receive")
 
     def find_available_chair(self, chairs):
         available_chairs_indices = [i for i, chair in enumerate(chairs) if chair.available]

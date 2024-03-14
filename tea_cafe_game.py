@@ -58,11 +58,10 @@ class MainWindow:
             Chair(16, 17), # bottom
         ]
 
-        #self.customer = Customer(9, 27, self.chairs, self.screen)
         initial_customer = Customer(9, 27, self.screen)
         self.customers = []
         self.customers.append(initial_customer)
-        self.spawn_interval = 1200
+        self.spawn_interval = random.randint(1200, 7200)
         self.spawn_timer = 0
 
         self.table = Table(16, 16)
@@ -106,8 +105,8 @@ class MainWindow:
                         elif distance_to_object(self.character, self.counter) <= 50 and self.counter.rect.collidepoint(mouse_x - self.camera_offset_x, mouse_y + self.camera_offset_y) and not self.inventory_screen.visible:
                             self.counter_screen.toggle_visibility()
                         for customer in self.customers:
-                            if distance_to_object(self.character, customer) <= 50 and customer.rect.collidepoint(mouse_x - self.camera_offset_x, mouse_y + self.camera_offset_y) and customer.wants_to_receive:
-                                if self.inventory_screen.item_held is not None and customer.wants_to_receive:
+                            if distance_to_object(self.character, customer) <= 50 and customer.rect.collidepoint(mouse_x - self.camera_offset_x, mouse_y + self.camera_offset_y) and not customer.received and customer.sitting:
+                                if self.inventory_screen.item_held is not None:
                                     customer.receive_item(self.inventory_screen.item_held, self.coin)
                                     self.inventory_screen.item_held = None
                                     customer.text_box_open = True
@@ -141,7 +140,7 @@ class MainWindow:
                 collision = True
 
             for customer in self.customers:
-                if new_rect.colliderect(customer.rect):
+                if new_rect.colliderect(customer.rect) and customer.sitting:
                     collision = True
 
             if not collision:
@@ -181,7 +180,7 @@ class MainWindow:
                 self.customers.append(new_customer)
                 self.spawn_timer = 0
 
-            # draw customer and text box
+            # draw customer
             for customer in self.customers:
                 customer.draw(self.screen, self.camera_offset_x, self.camera_offset_y)
                 if customer.chair_chosen == None:
@@ -190,14 +189,10 @@ class MainWindow:
                     self.obstacles = obstacle_list(self.walls, self.chairs, self.table, self.chairs[customer.chair_chosen])
                     customer.path = find_path(customer.spawn_point, (chair_x, chair_y), self.obstacles)
                 else:
-                    if customer.path:
-                        customer.counter = customer.counter - 1
-                        customer.update(customer.path)
-                        if not customer.path:
-                            customer.sitting = True
-                            customer.wants_to_receive = True
-                        if customer.counter == 0:
-                            customer.counter = 49
+                    customer.update()
+                    if not customer.path and not customer.received:
+                        self.sitting = True
+                        customer.wants_to_receive = True
 
             for customer in self.customers:
                 if customer.text_box_open:
@@ -206,13 +201,13 @@ class MainWindow:
                     chair_x, chair_y = self.chairs[customer.chair_chosen].x, self.chairs[customer.chair_chosen].y
                     self.obstacles = obstacle_list(self.walls, self.chairs, self.table, self.chairs[customer.chair_chosen])
                     customer.path = find_path((chair_x, chair_y), customer.spawn_point, self.obstacles)
-                    print("off to home")
-                    if not customer.path:
-                        customer.left = True
-                        customer.sitting = False
-                elif customer.sitting and not customer.wants_to_receive:
-                    print("decrement")
+                    self.sitting = False
+                if customer.leave_timer == 0 and customer.rect.x == customer.spawn_point[0] * TILE_SIZE and customer.rect.y == customer.spawn_point[1] * TILE_SIZE:
+                    self.chairs[customer.chair_chosen].available = True
+                    customer.left = True
+                elif customer.leave_timer != 0 and customer.received:
                     customer.leave_timer -= 1
+                
 
             self.customers = [customer for customer in self.customers if not customer.left]
 
