@@ -58,7 +58,12 @@ class MainWindow:
             Chair(16, 17), # bottom
         ]
 
-        self.customer = Customer(9, 27, self.chairs, self.screen)
+        #self.customer = Customer(9, 27, self.chairs, self.screen)
+        initial_customer = Customer(9, 27, self.screen)
+        self.customers = []
+        self.customers.append(initial_customer)
+        self.spawn_interval = 1200
+        self.spawn_timer = 0
 
         self.table = Table(16, 16)
         
@@ -95,18 +100,20 @@ class MainWindow:
                     elif event.button == 3:  # right mouse button
                         if self.counter_screen.visible:
                             self.counter_screen.toggle_visibility()
-                        elif self.customer.text_box_open:
-                            self.customer.text_box_open = False
+                        elif any(customer.text_box_open for customer in self.customers):
+                            for customer in self.customers:
+                                customer.text_box_open = False
                         elif distance_to_object(self.character, self.counter) <= 50 and self.counter.rect.collidepoint(mouse_x - self.camera_offset_x, mouse_y + self.camera_offset_y) and not self.inventory_screen.visible:
                             self.counter_screen.toggle_visibility()
-                        elif distance_to_object(self.character, self.customer) <= 50 and self.customer.rect.collidepoint(mouse_x - self.camera_offset_x, mouse_y + self.camera_offset_y) and self.customer.wants_to_receive:
-                            if self.inventory_screen.item_held is not None and self.customer.wants_to_receive:
-                                self.customer.receive_item(self.inventory_screen.item_held, self.coin)
-                                self.inventory_screen.item_held = None
-                                self.customer.text_box_open = True
-                            self.customer.text_box_open = True
+                        for customer in self.customers:
+                            if distance_to_object(self.character, customer) <= 50 and customer.rect.collidepoint(mouse_x - self.camera_offset_x, mouse_y + self.camera_offset_y) and customer.wants_to_receive:
+                                if self.inventory_screen.item_held is not None and customer.wants_to_receive:
+                                    customer.receive_item(self.inventory_screen.item_held, self.coin)
+                                    self.inventory_screen.item_held = None
+                                    customer.text_box_open = True
+                                customer.text_box_open = True
 
-            if not self.counter_screen.visible and not self.customer.text_box_open:
+            if not self.counter_screen.visible and not any(customer.text_box_open for customer in self.customers):
                 keys = pygame.key.get_pressed()
                 dx = (keys[pygame.K_d] - keys[pygame.K_a]) * 4
                 dy = (keys[pygame.K_s] - keys[pygame.K_w]) * 4
@@ -133,8 +140,9 @@ class MainWindow:
             if new_rect.colliderect(self.table.rect):
                 collision = True
 
-            if new_rect.colliderect(self.customer.rect):
-                collision = True
+            for customer in self.customers:
+                if new_rect.colliderect(customer.rect):
+                    collision = True
 
             if not collision:
                 self.character.move(dx, dy)
@@ -166,19 +174,47 @@ class MainWindow:
             # draw character
             self.character.draw(self.screen, self.camera_offset_x, self.camera_offset_y)
 
-            # draw customer
-            self.customer.draw(self.screen, self.camera_offset_x, self.camera_offset_y)
-            if self.customer.chair_chosen == None:
-                self.customer.chair_chosen = self.customer.find_available_chair()
-                chair_x, chair_y = self.chairs[self.customer.chair_chosen].x, self.chairs[self.customer.chair_chosen].y
-                self.obstacles = obstacle_list(self.walls, self.chairs, self.table, self.chairs[self.customer.chair_chosen])
-                self.customer.path = find_path(self.customer.spawn_point, (chair_x, chair_y), self.obstacles)
-                counter = 49
-            else:
-                counter = counter - 1
-                self.customer.update(self.customer.path, counter)
-                if counter == 0:
-                    counter = 49
+            # spawn customer
+            self.spawn_timer += 1
+            if self.spawn_timer >= self.spawn_interval and any(chair.available for chair in self.chairs):
+                new_customer = Customer(9, 27, self.screen)
+                self.customers.append(new_customer)
+                self.spawn_timer = 0
+
+            # draw customer and text box
+            for customer in self.customers:
+                customer.draw(self.screen, self.camera_offset_x, self.camera_offset_y)
+                if customer.chair_chosen == None:
+                    customer.chair_chosen = customer.find_available_chair(self.chairs)
+                    chair_x, chair_y = self.chairs[customer.chair_chosen].x, self.chairs[customer.chair_chosen].y
+                    self.obstacles = obstacle_list(self.walls, self.chairs, self.table, self.chairs[customer.chair_chosen])
+                    customer.path = find_path(customer.spawn_point, (chair_x, chair_y), self.obstacles)
+                else:
+                    if customer.path:
+                        customer.counter = customer.counter - 1
+                        customer.update(customer.path)
+                        if not customer.path:
+                            customer.sitting = True
+                            customer.wants_to_receive = True
+                        if customer.counter == 0:
+                            customer.counter = 49
+
+            for customer in self.customers:
+                if customer.text_box_open:
+                    customer.draw_text_box(self.screen)
+                if customer.leave_timer == 0 and not customer.path:
+                    chair_x, chair_y = self.chairs[customer.chair_chosen].x, self.chairs[customer.chair_chosen].y
+                    self.obstacles = obstacle_list(self.walls, self.chairs, self.table, self.chairs[customer.chair_chosen])
+                    customer.path = find_path((chair_x, chair_y), customer.spawn_point, self.obstacles)
+                    print("off to home")
+                    if not customer.path:
+                        customer.left = True
+                        customer.sitting = False
+                elif customer.sitting and not customer.wants_to_receive:
+                    print("decrement")
+                    customer.leave_timer -= 1
+
+            self.customers = [customer for customer in self.customers if not customer.left]
 
             # draw inventory
             if not self.counter_screen.visible:

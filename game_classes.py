@@ -20,40 +20,40 @@ class Character:
         self.rect.y += dy
 
 class Customer:
-    def __init__(self, x, y, chairs, screen):
+    def __init__(self, x, y, screen):
         self.rect = pygame.Rect(x * TILE_SIZE, y * TILE_SIZE, TILE_SIZE, TILE_SIZE)
         self.x = x
         self.y = y
         self.screen = screen
         self.spawn_point = (9, 27)
-        self.sitting = False
-        self.chairs = chairs
+        self.colour = None
         self.chair_chosen = None
+        self.sitting = False
         self.text_box_open = False
         self.path = []
+        self.counter = 49
+        self.leave_timer = random.randint(1200, 3600)
+        self.left = False
         with open('game_text.json') as f:
             self.texts = json.load(f)
         self.current_text = None
-        self.wants_to_receive = True
+        self.wants_to_receive = False
         self.item_wanted = "Tea"
 
-    def update(self, path, counter):
-        if path:
-            if counter == 0:
-                next_node = path.pop(0)
-            else:
-                next_node = path[0]
-            next_x, next_y = next_node
-            if next_x * 50 > self.rect.x:
-                self.rect.x = next_x * 50 - counter
-            elif next_x * 50 < self.rect.x:
-                self.rect.x = next_x * 50 + counter
-            elif next_y * 50 > self.rect.y:
-                self.rect.y = next_y * 50 - counter
-            elif next_y * 50 < self.rect.y:
-                self.rect.y = next_y * 50 + counter
+    def update(self, path):
+        if self.counter == 0:
+            next_node = path.pop(0)
         else:
-            self.sitting = True
+            next_node = path[0]
+        next_x, next_y = next_node
+        if next_x * 50 > self.rect.x:
+            self.rect.x = next_x * 50 - self.counter
+        elif next_x * 50 < self.rect.x:
+            self.rect.x = next_x * 50 + self.counter
+        elif next_y * 50 > self.rect.y:
+            self.rect.y = next_y * 50 - self.counter
+        elif next_y * 50 < self.rect.y:
+            self.rect.y = next_y * 50 + self.counter
 
     def receive_item(self, item, coins):
         if item == self.item_wanted:
@@ -62,30 +62,35 @@ class Customer:
         else:
             self.current_text = random.choice(self.texts.get("incorrect", []))
         self.wants_to_receive = False
+        print("doesnt wanna receive")
 
-    def find_available_chair(self):
-        available_chairs_indices = [i for i, chair in enumerate(self.chairs) if chair.available]
+    def find_available_chair(self, chairs):
+        available_chairs_indices = [i for i, chair in enumerate(chairs) if chair.available]
         if available_chairs_indices:
-            return random.choice(available_chairs_indices)
+            random_chair = random.choice(available_chairs_indices)
+            chairs[random_chair].available = False
+            return random_chair
         else:
             return None
 
     def draw(self, screen, camera_x, camera_y):
+        if self.colour == None:
+            self.colour = (random.randint(0, 255), random.randint(0, 255), random.randint(0, 255))
         adjusted_x = self.rect.x - camera_x
         adjusted_y = self.rect.y - camera_y
-        pygame.draw.rect(screen, (230, 175, 160), (adjusted_x, adjusted_y, TILE_SIZE, TILE_SIZE))
+        pygame.draw.rect(screen, self.colour, (adjusted_x, adjusted_y, TILE_SIZE, TILE_SIZE))
 
-        if self.text_box_open and self.sitting:
-            pygame.draw.rect(self.screen, (190, 130, 85), (200, 500, 600, 150))
-            pygame.draw.rect(self.screen, (230, 175, 160), (800, 400, 200, 250))
+    def draw_text_box(self, screen):
+        pygame.draw.rect(self.screen, (190, 130, 85), (200, 500, 600, 150))
+        pygame.draw.rect(self.screen, self.colour, (800, 400, 200, 250))
 
-            if self.current_text == None:
-                self.current_text = random.choice(self.texts.get("general tea requests", []))
+        if self.current_text == None:
+            self.current_text = random.choice(self.texts.get("general tea requests", []))
             
-            font = pygame.font.Font(None, 24)
-            text_surface = font.render(self.current_text, True, (0, 0, 0))
-            text_rect = text_surface.get_rect(center=(500, 575))
-            screen.blit(text_surface, text_rect)
+        font = pygame.font.Font(None, 24)
+        text_surface = font.render(self.current_text, True, (0, 0, 0))
+        text_rect = text_surface.get_rect(center=(500, 575))
+        screen.blit(text_surface, text_rect)
         
 class InventoryScreen:
     def __init__(self, screen, inventory):
