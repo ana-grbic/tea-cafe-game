@@ -2,9 +2,11 @@ import sys
 import pygame
 import math
 import time
-GRID_WIDTH = 24
-GRID_HEIGHT = 28
-TILE_SIZE = 50
+screen = pygame.display.set_mode((0, 0), pygame.FULLSCREEN)
+TILE_SIZE = 64
+GRID_WIDTH, GRID_HEIGHT = screen.get_size()
+GRID_WIDTH = math.floor(GRID_WIDTH / TILE_SIZE) * 2
+GRID_HEIGHT = math.floor(GRID_HEIGHT / TILE_SIZE) * 2
 
 def distance_to_object(character, obj):
     char_x, char_y = character.rect.center

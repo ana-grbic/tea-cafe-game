@@ -4,7 +4,7 @@ import math
 import time
 import random
 import json
-TILE_SIZE = 50
+TILE_SIZE = 64
 
 class Character:
     def __init__(self, x, y, width, height):
@@ -30,7 +30,7 @@ class Customer:
         self.chair_chosen = None
         self.text_box_open = False
         self.path = []
-        self.counter = 49
+        self.counter = 31
         self.leave_timer = random.randint(3600, 7200)
         self.sitting = False
         self.left = False
@@ -48,16 +48,16 @@ class Customer:
             else:
                 next_node = self.path[0]
             next_x, next_y = next_node
-            if next_x * 50 > self.rect.x:
-                self.rect.x = next_x * 50 - self.counter
-            elif next_x * 50 < self.rect.x:
-                self.rect.x = next_x * 50 + self.counter
-            elif next_y * 50 > self.rect.y:
-                self.rect.y = next_y * 50 - self.counter
-            elif next_y * 50 < self.rect.y:
-                self.rect.y = next_y * 50 + self.counter
+            if next_x * TILE_SIZE > self.rect.x:
+                self.rect.x = next_x * TILE_SIZE - self.counter
+            elif next_x * TILE_SIZE < self.rect.x:
+                self.rect.x = next_x * TILE_SIZE + self.counter
+            elif next_y * TILE_SIZE > self.rect.y:
+                self.rect.y = next_y * TILE_SIZE - self.counter
+            elif next_y * TILE_SIZE < self.rect.y:
+                self.rect.y = next_y * TILE_SIZE + self.counter
             if self.counter == 0:
-                self.counter = 49
+                self.counter = 31
             self.counter -= 1
 
     def receive_item(self, item, coins):
@@ -114,11 +114,11 @@ class InventoryScreen:
 
     def draw(self):
         if self.visible:
-            self.inventory_screen_rect = pygame.draw.rect(self.screen, (190, 130, 85), (50, 50, 200, 300))
+            self.inventory_screen_rect = pygame.draw.rect(self.screen, (190, 130, 85), (50, 100, 200, 300))
 
             font = pygame.font.Font(None, 24)
             x_pos = 60
-            y_pos = 70
+            y_pos = 120
             for item, count in self.inventory_items.items():
                 if count > 0:
                     text = f"{item} x{count}"
@@ -259,9 +259,61 @@ class Coin:
         self.screen = screen
         self.amount = 0
 
-    def draw(self):
-        self.inventory_screen_rect = pygame.draw.rect(self.screen, (250, 190, 75), (1125, 25, 40, 40))
+    def draw(self, GRID_WIDTH):
+        pygame.draw.rect(self.screen, (250, 190, 75), (TILE_SIZE * (GRID_WIDTH - 1.5), TILE_SIZE / 2, TILE_SIZE, TILE_SIZE))
 
         font = pygame.font.Font(None, 50)
         text_surface = font.render(str(self.amount), True, (0, 0, 0))
-        self.screen.blit(text_surface, (1090, 30))
+        self.screen.blit(text_surface, (TILE_SIZE * (GRID_WIDTH - 1.5) - 30, TILE_SIZE))
+
+class Shop:
+    def __init__(self, screen):
+        self.screen = screen
+        self.open = False
+        with open('game_text.json') as f:
+            self.description = json.load(f)
+        self.screen_rect = pygame.Rect(200, 50, 800, 600)
+        self.categories = ["Plants", "Decorations", "Expansions"]
+        self.button_width = self.screen_rect.width // len(self.categories)
+        self.button_height = 50
+        self.button_spacing = 10
+        self.buttons = []
+
+        for i, category in enumerate(self.categories):
+            button_rect = pygame.Rect(self.screen_rect.left + i * (self.button_width + self.button_spacing),
+                                       self.screen_rect.top,
+                                       self.button_width,
+                                       self.button_height)
+            self.buttons.append(button_rect)
+
+    def draw(self):
+        self.icon_rect = pygame.draw.rect(self.screen, (190, 130, 85), (35, 25, 60, 60))
+
+        if self.open:
+            self.screen_rect = pygame.draw.rect(self.screen, (190, 130, 85), (200, 50, 800, 600))
+
+            for button_rect, category in zip(self.buttons, self.categories):
+                font = pygame.font.Font(None, 24)
+                text_surface = font.render(category, True, (0, 0, 0))
+                text_rect = text_surface.get_rect(center=button_rect.center)
+                self.screen.blit(text_surface, text_rect)
+
+    def handle_click(self, mouse_pos):
+        for item, rect in self.item_rects.items():
+            if rect.collidepoint(mouse_pos):
+                if item == "Leaf":
+                    if self.inventory.get("Leaf", 0) > 0:
+                        self.inventory["Leaf"] -= 1
+                        self.inventory["Tea"] = self.inventory.get("Tea", 0) + 1
+
+    def hold_item(self, mouse_pos):
+        if self.item_held is not None and self.inventory_screen_rect.collidepoint(mouse_pos):
+            self.inventory_items[self.item_held] += 1
+            self.item_held = None
+            return
+
+        for item, rect in self.item_rects.items():
+            if rect.collidepoint(mouse_pos):
+                if self.inventory_items[item] > 0 and self.item_held == None:
+                    self.inventory_items[item] -= 1
+                    self.item_held = item
